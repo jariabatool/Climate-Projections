@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Climate Projections</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/css/bootstrap.min.css">
+    <style>
+     body {
+    padding: 20px;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f7f9fc;
+    animation: fadeIn 1s ease-in-out;
+}
+
+h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    animation: slideInDown 1s ease-in-out;
+    text-align: center;
+    margin-bottom: 30px;
+    color: #3498db;
+}
+
+label {
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.form-control {
+    border-radius: 8px;
+    border: 2px solid #3498db;
+    padding: 10px;
+    font-size: 1rem;
+    color: #2c3e50;
+    transition: all 0.3s ease-in-out;
+}
+
+.form-control:focus {
+    border-color: #2980b9;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+select.form-control {
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="gray" class="bi bi-chevron-down" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+.btn-primary {
+    background-color: #3498db;
+    border-color: #2980b9;
+    font-weight: bold;
+    padding: 10px 20px;
+    border-radius: 7px;
+    font-size: 1.2rem;
+    transition: all 0.3s ease-in-out;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+    border-color: #3498db;
+    box-shadow: 0 0 15px rgba(41, 128, 185, 0.5);
+    transform: scale(1.05);
+}
+
+.flash-message {
+    margin-bottom: 15px;
+    color: #e74c3c;
+    font-weight: bold;
+    animation: fadeInUp 0.5s ease-in-out;
+}
+
+#loader {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    text-align: center;
+    padding-top: 20%;
+    display: none;
+    font-size: 1.5rem;
+    animation: fadeIn 1s ease-in-out, pulse 2s infinite;
+}
+
+form {
+    background-color: #ecf0f1;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(44, 62, 80, 0.1);
+    animation: fadeInLeft 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Climate Projections</h1>
+
+        {% if error_messages %}
+            <div class="alert alert-danger flash-message">
+                {% for key, message in error_messages.items() %}
+                    {% if message %}
+                        <p>{{ message }}</p>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+    <form action="{{ url_for('run_notebook_endpoint') }}" method="post" id="notebookForm">
+           <div class="mb-3">
+    <label for="city" class="form-label">Station</label>
+    <select class="form-control" id="city" name="city" required>
+        <option value="" disabled selected>Choose a station from the list</option>
+        <option value="Astore">Astore</option>
+        <option value="Bahawalnagar">Bahawalnagar</option>
+        <option value="Bahawalpur">Bahawalpur</option>
+        <option value="MoenjoDaro">Moenjo Daro</option>
+        <option value="Ormara">Ormara</option>
+        <option value="Sakrand">Sakrand</option>
+        <option value="Sukkur">Sukkur</option>
+        <option value="Turbat">Turbat</option>
+        <option value="see-more" style="color:#3498db">See more...</option>
+    </select>
+</div>
+            <div class="mb-3">
+                <label for="variable" class="form-label">Variable</label>
+                <select class="form-control" id="variable" name="variable" required>
+                    <option value="" disabled selected>Choose a variable from the list</option>
+                    <option value="Tmax">Maximum Temperature</option>
+                    <option value="Tmin">Minimum Temperature</option>
+                    <option value="prep">Precipitation</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="startTime" class="form-label">Start Time</label>
+                <input type="date" class="form-control" id="startTime" name="startTime" required>
+            </div>
+            <div class="mb-3">
+                <label for="endTime" class="form-label">End Time</label>
+                <input type="date" class="form-control" id="endTime" name="endTime" required>
+            </div>
+            <button type="submit" id="biasCorrectionButton" class="btn btn-primary">Get Projections</button>
+        </form>
+
+        <div id="loader">
+            <p>Loading...</p>
+        </div>
+    </div>
+    <script>
+        document.getElementById('city').addEventListener('change', function() {
+        const selectedValue = this.value;
+
+        // If the user selects "See more..."
+        if (selectedValue === "see-more") {
+            // List of additional cities to add
+            const moreCities = [
+                {value: "Balakot", text: "Balakot"},
+                {value: "Barkhan", text: "Barkhan"},
+                {value: "Bakkar", text: "Bakkar"},
+                {value: "Bunji", text: "Bunji"},
+                {value: "Chakwal", text: "Chakwal"},
+                {value: "Cherat", text: "Cherat"},
+                {value: "Chilas", text: "Chilas"},
+                {value: "Chitral", text: "Chitral"},
+                {value: "Dalbandin", text: "Dalbandin"},
+                {value: "DGkhan", text: "DG Khan"},
+                {value: "Dir", text: "Dir"},
+                {value: "Drosh", text: "Drosh"},
+                {value: "Faisalabad", text: "Faisalabad"},
+                {value: "GarhiDupatta", text: "Garhi Dupatta"},
+                {value: "Gilgit", text: "Gilgit"},
+                {value: "Gujranwala", text: "Gujranwala"},
+                {value: "Gujrat", text: "Gujrat"},
+                {value: "Gupis", text: "Gupis"},
+                {value: "Hyderabad", text: "Hyderabad"},
+                {value: "Jacobabad", text: "Jacobabad"},
+                {value: "Jhelum", text: "Jhelum"},
+                {value: "Kakul", text: "Kakul"},
+                {value: "Karachi", text: "Karachi"},
+                {value: "Kotli", text: "Kotli"},
+                {value: "Lahore", text: "Lahore"},
+                {value: "Multan", text: "Multan"},
+                {value: "Muzaffarabad", text: "Muzaffarabad"},
+                {value: "Nawabshah", text: "Nawabshah"},
+                {value: "Padidan", text: "Padidan"},
+                {value: "Parachinar", text: "Parachinar"},
+                {value: "Pasni", text: "Pasni"},
+                {value: "Peshawar", text: "Peshawar"},
+                {value: "Sailkot", text: "Sailkot"},
+                {value: "Sargoda", text: "Sargoda"},
+                {value: "Sibbi", text: "Sibbi"},
+                {value: "Skardu", text: "Skardu"},
+                {value: "Jhang", text: "Jhang"},
+                {value: "Kalam", text: "Kalam"},
+                {value: "Kalat", text: "Kalat"},
+                {value: "Larkana", text: "Larkana"},
+                {value: "Dadu", text: "Dadu"},
+                {value: "Gwadar", text: "Gwadar"},
+                {value: "Mirkhani", text: "Mirkhani"},
+                {value: "Mirpur", text: "Mirpur"},
+                {value: "Mithi", text: "Mithi"},
+                {value: "Okara", text: "Okara"},
+                {value: "Sahiwal", text: "Sahiwal"},
+                {value: "Tobateksingh", text: "Toba Tek Singh"},
+                {value: "Zhob", text: "Zhob"},
+                {value: "Sariab", text: "Sariab"},
+                {value: "Sheikhmanda", text: "Sheikhmanda"},
+                {value: "RahimYarKhan", text: "Rahim Yar Khan"},
+                {value: "Rawalkot", text: "Rawalkot"},
+                {value: "Chhor", text: "Chhor"},
+                {value: "NoorpurThal", text: "Noorpur Thal"},
+                {value: "Nokkudi", text: "Nokkudi"},
+                {value: "Thatta", text: "Thatta"},
+                {value: "MandiBahauddin", text: "Mandi Bahauddin"},
+                {value: "Malamjabba", text: "Malam Jabba"},
+                {value: "Uthal", text: "Uthal"},
+                {value: "Tandojan", text: "Tandojan"}
+            ];
+            
+            // Get the dropdown element
+            const citySelect = document.getElementById('city');
+
+            // Add the new cities
+            moreCities.forEach(city => {
+                const option = document.createElement('option');
+                option.value = city.value;
+                option.textContent = city.text;
+                citySelect.appendChild(option);
+            });
+
+            // Remove "See more..." option after clicking
+            this.remove(this.selectedIndex);
+        }
+    });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('notebookForm');
+    const loader = document.getElementById('loader');
+    const biasCorrectionButton = document.getElementById('biasCorrectionButton');
+
+    // Handle form submission
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+
+        
+        if (!form.checkValidity()) {
+            alert('Please fill out all required fields.');
+            return false;
+        }
+
+    
+        loader.style.display = 'block';
+
+        
+        const formData = new FormData(form);
+
+        // Send an AJAX request to the server
+        fetch('/run_notebook', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            
+            loader.style.display = 'none';
+
+            
+            let flashMessagesDiv = document.querySelector('.flash-messages');
+            if (!flashMessagesDiv) {
+                flashMessagesDiv = document.createElement('div');
+                flashMessagesDiv.className = 'flash-messages';
+                document.querySelector('.container').prepend(flashMessagesDiv);
+            }
+
+        
+            flashMessagesDiv.innerHTML = '';
+
+            //error
+            if (data.errors) {
+                Object.entries(data.errors).forEach(([key, message]) => {
+                    if (message) { // Check if the message is not empty
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-danger';
+                        alertDiv.textContent = message;
+                        flashMessagesDiv.appendChild(alertDiv);
+                    }
+                });
+            } else if (data.error) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-danger';
+                alertDiv.textContent = data.error;
+                flashMessagesDiv.appendChild(alertDiv);
+            } else {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.textContent = data.message || 'Bias correction completed successfully!';
+                flashMessagesDiv.appendChild(alertDiv);
+                setTimeout(function() {
+                    window.location.href = '/results';
+                }, 1500); 
+            }
+        })
+        .catch(error => {
+            loader.style.display = 'none';
+
+            //  errors
+            let flashMessagesDiv = document.querySelector('.flash-messages');
+            if (!flashMessagesDiv) {
+                flashMessagesDiv = document.createElement('div');
+                flashMessagesDiv.className = 'flash-messages';
+                document.querySelector('.container').prepend(flashMessagesDiv);
+            }
+
+            flashMessagesDiv.innerHTML = '<div class="alert alert-danger">An unexpected error occurred.</div>';
+            console.error('Error:', error);
+        });
+    });
+
+    
+    if (biasCorrectionButton) {
+        biasCorrectionButton.addEventListener('click', function() {
+            if (!form.checkValidity()) {
+                alert('Please fill out all required fields before proceeding.');
+                return;
+            }
+            loader.style.display = 'block';
+            setTimeout(function() {
+                window.location.href = '/results';
+            }, 15000);
+        });
+    }
+});
+    </script>
+</body>
+</html>
